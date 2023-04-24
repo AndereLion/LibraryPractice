@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from LibraryPractice.borrowings.models import Borrowing
 from LibraryPractice.borrowings.serializers import (
     BorrowingListSerializer,
-    BorrowingDetailSerializer,
+    BorrowingDetailSerializer, BorrowingCreateSerializer,
 )
 
 
@@ -27,9 +27,6 @@ class BorrowingList(generics.ListCreateAPIView):
             return Borrowing.objects.select_related("book", "user").all()
         return Borrowing.objects.select_related("book", "user").filter(user=self.request.user)
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
 
 class BorrowingDetail(generics.RetrieveUpdateAPIView):
     serializer_class = BorrowingDetailSerializer
@@ -42,3 +39,9 @@ class BorrowingDetail(generics.RetrieveUpdateAPIView):
             return Borrowing.objects.select_related(
                 "book", "user"
             ).filter(user=self.request.user)
+
+
+class BorrowingCreateView(generics.CreateAPIView):
+    queryset = Borrowing.objects.all()
+    serializer_class = BorrowingCreateSerializer
+    permission_classes = [IsAuthenticated]

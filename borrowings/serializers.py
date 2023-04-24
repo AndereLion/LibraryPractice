@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
-from borrowing.models import Borrowing
+from borrowings.models import Borrowing
 from book.serializers import BookDetailSerializer
+from django.core.exceptions import ValidationError
 
 
 class BorrowingSerializer(serializers.ModelSerializer):
@@ -47,3 +48,22 @@ class BorrowingDetailSerializer(serializers.ModelSerializer):
                   "user",
                   "book"]
 
+
+class BorrowingCreateSerializer(BorrowingSerializer):
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    class Meta:
+        model = Borrowing
+        fields = ["id", "borrow_date", "expected_return_date", "actual_return_date", "user", "book"]
+
+    def validate_book(self, book):
+        if book.inventory == 0:
+            raise ValidationError("The book inventory is 0.")
+        return book
+
+    def create(self, validated_data):
+        book = validated_data["book"]
+        book.inventory -= 1
+        book.save()
+        borrowing = Borrowing.objects.create(**validated_data)
+        return borrowing
