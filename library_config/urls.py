@@ -5,6 +5,8 @@ from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 urlpatterns = [
+    path("api/users/", include("user.urls", namespace="user")),
+    path("api/books/", include("books.urls", namespace="book")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
         "api/doc/swagger/",
@@ -12,9 +14,7 @@ urlpatterns = [
         name="swagger",
       ),
     path("admin/", admin.site.urls),
-
-    path("api/user/", include("user.urls", namespace="user")),
-    path("api/books/", include("books.urls", namespace="book"))
+    path("api/users/", include("user.urls", namespace="users")),
 ] + static(
     settings.MEDIA_URL,
     document_root=settings.MEDIA_ROOT
