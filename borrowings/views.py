@@ -1,3 +1,5 @@
+from time import timezone
+
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
@@ -13,7 +15,12 @@ class BorrowingList(generics.ListCreateAPIView):
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
-        if self.request.user.is_staff:
+        is_active = self.request.query_params.get("is_active")
+        if is_active == "true":
+            return Borrowing.objects.filter(
+                actual_return_date__isnull=True, expected_return_date__lte=timezone.now()
+            )
+        elif self.request.user.is_staff:
             user_id = self.request.query_params.get("user_id")
             if user_id:
                 return Borrowing.objects.select_related("book", "user").filter(user_id=user_id)
