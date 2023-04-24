@@ -1,6 +1,6 @@
 from django.db import models
 from Book.models import Book
-from User.models import User
+from user.models import User
 
 
 class Borrowing(models.Model):
