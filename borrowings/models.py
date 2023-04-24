@@ -1,6 +1,6 @@
+from django.contrib.auth import get_user_model
 from django.db import models
-from Book.models import Book
-from User.models import User
+from books.models import Book
 
 
 class Borrowing(models.Model):
@@ -8,4 +8,4 @@ class Borrowing(models.Model):
     expected_return_date = models.DateField()
     actual_return_date = models.DateField(null=True, blank=True)
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
