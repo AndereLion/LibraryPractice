@@ -5,11 +5,11 @@ from django.dispatch import receiver
 from borrowings.models import Borrowing
 
 
-from library_bot.bot import bot, settings
-
-
 @receiver(post_save, sender=Borrowing)
 def send_notification(sender, instance, created, **kwargs):
+    from library_bot.bot import bot
+    from library_bot.settings import settings
+
     if created:
         try:
             message = (

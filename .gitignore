@@ -360,3 +360,6 @@ pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/pycharm+all,django,python
 /celerybeat-schedule.db
+/logs/
+/static/
+!library_config/static/

@@ -1,6 +1,6 @@
 from aiogram import executor
 
-from library_bot.bot import dp
+from library_bot import bot
 
 
 async def on_startup(dispatcher):
@@ -13,7 +13,7 @@ async def on_shutdown(dispatcher):
 
 if __name__ == '__main__':
     executor.start_polling(
-        dp,
+        bot.dp,
         skip_updates=False,
         on_startup=on_startup,
         on_shutdown=on_shutdown
