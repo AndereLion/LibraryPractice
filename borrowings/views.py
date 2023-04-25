@@ -3,8 +3,8 @@ from django.utils import timezone
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
-from LibraryPractice.borrowings.models import Borrowing
-from LibraryPractice.borrowings.serializers import (
+from borrowings.models import Borrowing
+from borrowings.serializers import (
     BorrowingListSerializer,
     BorrowingDetailSerializer,
 )
