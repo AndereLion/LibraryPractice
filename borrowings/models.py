@@ -16,9 +16,9 @@ class Borrowing(models.Model):
         on_delete=models.CASCADE,
         related_name="borrowings"
     )
-    borrowed_date = models.DateTimeField(auto_now_add=True)
-    expected_return_date = models.DateTimeField()
-    actual_return_date = models.DateTimeField(null=True, blank=True)
+    borrowed_date = models.DateField()
+    expected_return_date = models.DateField()
+    actual_return_date = models.DateField(null=True, blank=True)
 
     def __str__(self) -> str:
         return f"{self.user} borrowed {self.book}"
