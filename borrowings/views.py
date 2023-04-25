@@ -29,17 +29,16 @@ class BorrowingViewSet(
         queryset = self.queryset
         is_active = self.request.query_params.get("is_active")
 
-        if not self.request.user.is_staff:
-            queryset = queryset.filter(user=self.request.user)
-
-        if is_active is not None:
-
-            if is_active == "False":
-                queryset = queryset.filter(actual_return_date__isnull=False)
-            elif is_active == "True":
-                queryset = queryset.filter(actual_return_date__isnull=True)
-
-        return queryset
+        if is_active == "true":
+            return Borrowing.objects.filter(
+                actual_return_date__isnull=True, expected_return_date__lte=timezone.now()
+            )
+        elif self.request.user.is_staff:
+            user_id = self.request.query_params.get("user_id")
+            if user_id:
+                return Borrowing.objects.select_related("book", "user").filter(user_id=user_id)
+            return Borrowing.objects.select_related("book", "user").all()
+        return Borrowing.objects.select_related("book", "user").filter(user=self.request.user)
 
     def get_serializer_class(self):
 
