@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from borrowings.models import Borrowing
 from books.serializers import BookDetailSerializer
@@ -8,22 +9,17 @@ class BorrowingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Borrowing
         fields = (
+            "id",
             "borrow_date",
             "expected_return_date",
             "actual_return_date",
             "book",
             "user"
         )
+        read_only_fields = "__all__"
 
 
 class BorrowingListSerializer(BorrowingSerializer):
-    book = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field="title"
-    )
-    user = serializers.SlugRelatedField(
-        read_only=True, slug_field="email"
-    )
-
     class Meta:
         model = Borrowing
         fields = (
@@ -48,3 +44,30 @@ class BorrowingDetailSerializer(serializers.ModelSerializer):
             "user",
             "book"
         ]
+
+
+class BorrowingCreateSerializer(BorrowingSerializer):
+    class Meta:
+        model = Borrowing
+        fields = "__all__"
+        read_only_fields = ("id", "user", "actual_return_date")
+
+    def create(self, validated_data):
+
+        book = validated_data.get("book")
+        if book.inventory <= 0:
+            raise ValidationError(
+                {"error": "No books available"}
+            )
+
+        borrowing = Borrowing.objects.create(**validated_data)
+        book.inventory -= 1
+        book.save()
+
+        return borrowing
+
+
+class BorrowingReturnSerializer(BorrowingSerializer):
+    class Meta:
+        model = Borrowing
+        fields = ("id", "actual_return_date")
