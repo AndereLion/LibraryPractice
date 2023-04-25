@@ -14,17 +14,10 @@ COPY requirements.txt ./
 RUN pip install --upgrade pip && \
     pip install -r ./requirements.txt
 
-
 ENV PATH="/api/library_practice:${PATH}"
-
-COPY entrypoint.sh ./entrypoint.sh
-
-RUN chmod +x ./entrypoint.sh
 
 COPY . .
 
 RUN apk add bash
 
 EXPOSE 8000
-
-ENTRYPOINT ["bash", "/api/library_practice/entrypoint.sh"]
