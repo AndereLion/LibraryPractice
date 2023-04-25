@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.db import models
 
@@ -11,11 +12,11 @@ class Borrowing(models.Model):
         related_name="borrowings"
     )
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        settings.get_user_model(),
         on_delete=models.CASCADE,
         related_name="borrowings"
     )
-    borrowed_at = models.DateTimeField(auto_now_add=True)
+    borrowed_date = models.DateTimeField(auto_now_add=True)
     expected_return_date = models.DateTimeField()
     actual_return_date = models.DateTimeField(null=True, blank=True)
 
