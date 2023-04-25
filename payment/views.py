@@ -42,7 +42,7 @@ class HomePageView(TemplateView):
 @csrf_exempt
 def stripe_config(request):
     if request.method == 'GET':
-        stripe_config = {'publicKey': os.environ["STRIPE_PUBLISHABLE_KEY"]}
+        stripe_config = {'publicKey': os.environ.get("STRIPE_PUBLISHABLE_KEY")}
         return JsonResponse(stripe_config, safe=False)
 
 
@@ -50,7 +50,7 @@ def stripe_config(request):
 def create_checkout_session(request):
     if request.method == 'GET':
         domain_url = 'http://localhost:8000/'
-        stripe.api_key = os.environ["STRIPE_SECRET_KEY"]
+        stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
         try:
             checkout_session = stripe.checkout.Session.create(
                 client_reference_id=request.user.id if request.user.is_authenticated else None,
@@ -60,7 +60,7 @@ def create_checkout_session(request):
                 mode='payment',
                 line_items=[
                     {
-                        "price": os.environ["PRICE_KEY"],
+                        "price": os.environ.get("PRICE_KEY"),
                         'quantity': 1,
                     }
                 ]
@@ -80,8 +80,8 @@ class CancelledView(TemplateView):
 
 @csrf_exempt
 def stripe_webhook(request):
-    stripe.api_key = os.environ["STRIPE_SECRET_KEY"]
-    endpoint_secret = os.environ["STRIPE_ENDPOINT_SECRET"]
+    stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
+    endpoint_secret = os.environ.get("STRIPE_ENDPOINT_SECRET")
     payload = request.body
     sig_header = request.META['HTTP_STRIPE_SIGNATURE']
     event = None
