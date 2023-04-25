@@ -16,6 +16,7 @@ urlpatterns = [
       ),
     path("admin/", admin.site.urls),
     path("api/users/", include("user.urls", namespace="users")),
+    path('', include('payment.urls')),
 ] + static(
     settings.MEDIA_URL,
     document_root=settings.MEDIA_ROOT
