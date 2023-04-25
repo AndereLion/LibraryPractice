@@ -1,6 +1,6 @@
 from aiogram import Bot, Dispatcher, types
 
-from library_bot.settings import settings
+from .settings import settings
 
 bot = Bot(token=settings.BOT_TOKEN)
 dp = Dispatcher(bot)
