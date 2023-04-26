@@ -2,7 +2,8 @@ import os
 
 import stripe
 
-from django.conf import settings
+from django.urls import reverse
+from django.http import HttpRequest
 
 from payment.models import Payment, PaymentStatus, PaymentType
 
@@ -25,10 +26,13 @@ def calculate_borrowing_days(borrowing):
 
 
 def create_borrowing_stripe_session(borrowing):
+    request = HttpRequest()
+    success_url = request.build_absolute_uri(reverse("order_success"))
+    cancel_url = request.build_absolute_uri(reverse("order_cancel"))
     checkout_session = stripe.checkout.Session.create(
 
-        success_url=settings.DOMAIN_URL + "/success/",
-        cancel_url=settings.DOMAIN_URL + "/cancelled/",
+        success_url=success_url + "?session_id={CHECKOUT_SESSION_ID}",
+        cancel_url=cancel_url,
         payment_method_types=["card"],
         mode="subscription",
         api_key=os.environ.get("STRIPE_SECRET_KEY"),
