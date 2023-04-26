@@ -12,9 +12,18 @@ from .models import Payment
 from .serializers import PaymentListSerializer, PaymentDetailSerializer
 
 
-def calculate_borrowing_total_price(borrowing: str) -> int | str:
+def create_payment(
+        session: str,
+        session_id: str,
+        borrowing_id: str
+) -> int | str:
+    # serializer = PaymentDetailSerializer(payment)
+    pass
+
+
+def calculate_borrowing_total_price(borrowing_id: str) -> int | str:
     try:
-        int_key = int(borrowing)
+        int_key = int(borrowing_id)
     except ValueError as e:
         print(e)
         return "Please provide proper Borrowing pk as int"
@@ -24,7 +33,8 @@ def calculate_borrowing_total_price(borrowing: str) -> int | str:
             < borrowing.actual_return_date
     ):
         return 0
-    days_in_dept = (borrowing.expected_return_date - borrowing.actual_return_date).days + 1
+    days_in_dept = (borrowing.expected_return_date
+                    - borrowing.actual_return_date).days + 1
     borrowing_total_price = days_in_dept * borrowing.book.daily_fee
     return round(borrowing_total_price, 2)
 
@@ -80,6 +90,7 @@ def stripe_config(request):
     return Response(stripe_config)
 
 
+# TODO: create Payment inside get and post with attached borrowing if exist
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def create_checkout_session(request):
@@ -107,8 +118,8 @@ def create_checkout_session(request):
             return JsonResponse({"error": str(e)})
 
     if request.method == "POST":
-        borrowing = request.GET.get("borrowing")
-        total_price = calculate_borrowing_total_price(borrowing)
+        borrowing_id = request.GET.get("borrowing")
+        total_price = calculate_borrowing_total_price(borrowing_id)
 
         try:
             checkout_session = stripe.checkout.Session.create(
@@ -124,8 +135,13 @@ def create_checkout_session(request):
                     }
                 ],
                 metadata={
-                    "borrowings": borrowing,
+                    "borrowings": borrowing_id,
                 }
+            )
+            create_payment(
+                session=checkout_session,
+                session_id=checkout_session["id"],
+                borrowing_id=borrowing_id,
             )
             return JsonResponse({
                 "sessionId": checkout_session["id"],

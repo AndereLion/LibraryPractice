@@ -22,6 +22,7 @@ class PaymentListSerializer(PaymentSerializer):
 
 
 class PaymentDetailSerializer(PaymentSerializer):
+
     class Meta:
         model = Payment
         fields = "__all__"
