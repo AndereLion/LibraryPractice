@@ -2,12 +2,31 @@ import os
 
 import stripe
 from django.http import JsonResponse, HttpResponse
+from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from borrowings.models import Borrowing
 from .models import Payment
 from .serializers import PaymentListSerializer, PaymentDetailSerializer
+
+
+def calculate_borrowing_total_price(borrowing: str) -> int | str:
+    try:
+        int_key = int(borrowing)
+    except ValueError as e:
+        print(e)
+        return "Please provide proper Borrowing pk as int"
+    borrowing = Borrowing.objects.get(id=int_key)
+    if not borrowing.actual_return_date or (
+            borrowing.expected_return_date
+            < borrowing.actual_return_date
+    ):
+        return 0
+    days_in_dept = (borrowing.expected_return_date - borrowing.actual_return_date).days + 1
+    borrowing_total_price = days_in_dept * borrowing.book.daily_fee
+    return round(borrowing_total_price, 2)
 
 
 #
@@ -81,12 +100,15 @@ def create_checkout_session(request):
                     }
                 ]
             )
-            return JsonResponse({"sessionId": checkout_session["id"]})
+            return JsonResponse({
+                "sessionId": checkout_session["id"],
+            })
         except Exception as e:
             return JsonResponse({"error": str(e)})
 
     if request.method == "POST":
         borrowing = request.GET.get("borrowing")
+        total_price = calculate_borrowing_total_price(borrowing)
 
         try:
             checkout_session = stripe.checkout.Session.create(
@@ -105,7 +127,10 @@ def create_checkout_session(request):
                     "borrowings": borrowing,
                 }
             )
-            return JsonResponse({"sessionId": checkout_session["id"]})
+            return JsonResponse({
+                "sessionId": checkout_session["id"],
+                "unit_amount": total_price,
+            })
         except Exception as e:
             return JsonResponse({"error": str(e)})
 
