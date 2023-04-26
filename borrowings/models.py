@@ -19,8 +19,6 @@ class Borrowing(models.Model):
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
 
     def clean(self):
-        if self.actual_return_date and self.actual_return_date < timezone.now().date():
-            raise ValidationError("Actual return date cannot be earlier than today.")
         if self.expected_return_date < timezone.now().date():
             raise ValidationError("Expected return date cannot be earlier than today.")
         if self.expected_return_date < self.borrow_date:
