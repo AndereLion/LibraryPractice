@@ -15,15 +15,6 @@ from .models import Payment, PaymentStatus, PaymentType
 from .serializers import PaymentListSerializer, PaymentDetailSerializer
 
 
-def create_payment(
-        session: str,
-        session_id: str,
-        borrowing_id: str
-) -> int | str:
-    # serializer = PaymentDetailSerializer(payment)
-    pass
-
-
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def payment_list(request):
@@ -79,15 +70,12 @@ def stripe_webhook(request):
         )
     except ValueError as e:
         print("Invalid payload")
-        # Invalid payload
         return HttpResponse(status=400)
 
     except stripe.error.SignatureVerificationError as e:
         print("Invalid signature")
-        # Invalid signature
         return HttpResponse(status=400)
 
-    # Handle the checkout.session.completed event
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
         print(session)

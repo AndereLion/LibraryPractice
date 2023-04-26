@@ -15,6 +15,12 @@ class BookSerializer(serializers.ModelSerializer):
             "daily_fee",
             "stripe_price_key"
         )
+        extra_kwargs = {
+            "stripe_price_key": {
+                "required": False,
+                "write_only": True,
+            },
+        }
 
 
 class BookListSerializer(BookSerializer):
