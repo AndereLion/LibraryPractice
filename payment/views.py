@@ -2,19 +2,13 @@ import os
 
 import stripe
 from django.http import JsonResponse, HttpResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import TemplateView
-from rest_framework import generics
-from rest_framework.authentication import TokenAuthentication
-from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import Payment
 from .serializers import PaymentListSerializer, PaymentDetailSerializer
 
-from dotenv import load_dotenv
-load_dotenv(".env")
 
 #
 # class PaymentListAPIView(generics.ListAPIView):
@@ -67,29 +61,53 @@ def stripe_config(request):
     return Response(stripe_config)
 
 
-@api_view(["GET"])
-@authentication_classes([TokenAuthentication])
+@api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def create_checkout_session(request):
     domain_url = "http://localhost:8000/"
     stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
-    try:
-        checkout_session = stripe.checkout.Session.create(
-            client_reference_id=request.user.id if request.user.is_authenticated else None,
-            success_url=domain_url + "success?session_id={CHECKOUT_SESSION_ID}",
-            cancel_url=domain_url + "cancelled/",
-            payment_method_types=["card"],
-            mode="payment",
-            line_items=[
-                {
-                    "price": os.environ.get("PRICE_KEY"),
-                    "quantity": 1,
+    if request.method == "GET":
+        try:
+            checkout_session = stripe.checkout.Session.create(
+                client_reference_id=request.user.id if request.user.is_authenticated else None,
+                success_url=domain_url + "success?session_id={CHECKOUT_SESSION_ID}",
+                cancel_url=domain_url + "cancelled/",
+                payment_method_types=["card"],
+                mode="payment",
+                line_items=[
+                    {
+                        "price": os.environ.get("PRICE_KEY"),
+                        "quantity": 1,
+                    }
+                ]
+            )
+            return JsonResponse({"sessionId": checkout_session["id"]})
+        except Exception as e:
+            return JsonResponse({"error": str(e)})
+
+    if request.method == "POST":
+        borrowing = request.GET.get("borrowing")
+
+        try:
+            checkout_session = stripe.checkout.Session.create(
+                client_reference_id=request.user.id if request.user.is_authenticated else None,
+                success_url=domain_url + "success?session_id={CHECKOUT_SESSION_ID}",
+                cancel_url=domain_url + "cancelled/",
+                payment_method_types=["card"],
+                mode="payment",
+                line_items=[
+                    {
+                        "price": os.environ.get("PRICE_KEY"),
+                        "quantity": 1,
+                    }
+                ],
+                metadata={
+                    "borrowings": borrowing,
                 }
-            ]
-        )
-        return JsonResponse({"sessionId": checkout_session["id"]})
-    except Exception as e:
-        return JsonResponse({"error": str(e)})
+            )
+            return JsonResponse({"sessionId": checkout_session["id"]})
+        except Exception as e:
+            return JsonResponse({"error": str(e)})
 
 
 @api_view(["POST"])
