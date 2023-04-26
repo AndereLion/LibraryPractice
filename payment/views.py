@@ -3,12 +3,15 @@ import os
 import stripe
 from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from . import services
 
 from borrowings.models import Borrowing
-from .models import Payment
+from .models import Payment, PaymentStatus, PaymentType
 from .serializers import PaymentListSerializer, PaymentDetailSerializer
 
 
@@ -19,47 +22,6 @@ def create_payment(
 ) -> int | str:
     # serializer = PaymentDetailSerializer(payment)
     pass
-
-
-def calculate_borrowing_total_price(borrowing_id: str) -> int | str:
-    try:
-        int_key = int(borrowing_id)
-    except ValueError as e:
-        print(e)
-        return "Please provide proper Borrowing pk as int"
-    borrowing = Borrowing.objects.get(id=int_key)
-    if not borrowing.actual_return_date or (
-            borrowing.expected_return_date
-            < borrowing.actual_return_date
-    ):
-        return 0
-    days_in_dept = (borrowing.expected_return_date
-                    - borrowing.actual_return_date).days + 1
-    borrowing_total_price = days_in_dept * borrowing.book.daily_fee
-    return round(borrowing_total_price, 2)
-
-
-#
-# class PaymentListAPIView(generics.ListAPIView):
-#     serializer_class = PaymentListSerializer
-#     permission_classes = [IsAuthenticated]
-#
-#     def get_queryset(self):
-#         if self.request.user.is_staff:
-#             return Payment.objects.all()
-#         else:
-#             return Payment.objects.filter(user=self.request.user)
-#
-#
-# class PaymentDetailAPIView(generics.RetrieveAPIView):
-#     serializer_class = PaymentDetailSerializer
-#     permission_classes = [IsAuthenticated]
-#
-#     def get_queryset(self):
-#         if self.request.user.is_staff:
-#             return Payment.objects.all()
-#         else:
-#             return Payment.objects.filter(user=self.request.user)
 
 
 @api_view(["GET"])
@@ -90,68 +52,20 @@ def stripe_config(request):
     return Response(stripe_config)
 
 
-# TODO: create Payment inside get and post with attached borrowing if exist
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
-def create_checkout_session(request):
-    domain_url = "http://localhost:8000/"
-    stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
+def create_checkout_session(request, borrowing_id: int):
+    borrowing = get_object_or_404(Borrowing, pk=borrowing_id)
     if request.method == "GET":
         try:
-            checkout_session = stripe.checkout.Session.create(
-                client_reference_id=request.user.id if request.user.is_authenticated else None,
-                success_url=domain_url + "success?session_id={CHECKOUT_SESSION_ID}",
-                cancel_url=domain_url + "cancelled/",
-                payment_method_types=["card"],
-                mode="payment",
-                line_items=[
-                    {
-                        "price": os.environ.get("PRICE_KEY"),
-                        "quantity": 1,
-                    }
-                ]
-            )
-            return JsonResponse({
-                "sessionId": checkout_session["id"],
-            })
-        except Exception as e:
-            return JsonResponse({"error": str(e)})
-
-    if request.method == "POST":
-        borrowing_id = request.GET.get("borrowing")
-        total_price = calculate_borrowing_total_price(borrowing_id)
-
-        try:
-            checkout_session = stripe.checkout.Session.create(
-                client_reference_id=request.user.id if request.user.is_authenticated else None,
-                success_url=domain_url + "success?session_id={CHECKOUT_SESSION_ID}",
-                cancel_url=domain_url + "cancelled/",
-                payment_method_types=["card"],
-                mode="payment",
-                line_items=[
-                    {
-                        "price": os.environ.get("PRICE_KEY"),
-                        "quantity": 1,
-                    }
-                ],
-                metadata={
-                    "borrowings": borrowing_id,
-                }
-            )
-            create_payment(
-                session=checkout_session,
-                session_id=checkout_session["id"],
-                borrowing_id=borrowing_id,
-            )
-            return JsonResponse({
-                "sessionId": checkout_session["id"],
-                "unit_amount": total_price,
-            })
+            checkout_session, _ = services.create_borrowing_stripe_session(borrowing)
+            return JsonResponse(checkout_session)
         except Exception as e:
             return JsonResponse({"error": str(e)})
 
 
 @api_view(["POST"])
+@csrf_exempt
 def stripe_webhook(request):
     stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
     endpoint_secret = os.environ.get("STRIPE_ENDPOINT_SECRET")
@@ -164,22 +78,29 @@ def stripe_webhook(request):
             payload, sig_header, endpoint_secret
         )
     except ValueError as e:
+        print("Invalid payload")
         # Invalid payload
         return HttpResponse(status=400)
+
     except stripe.error.SignatureVerificationError as e:
+        print("Invalid signature")
         # Invalid signature
         return HttpResponse(status=400)
 
     # Handle the checkout.session.completed event
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
-        client_reference_id = session.get("client_reference_id")
-        if client_reference_id:
+        print(session)
+        session_id = session.get("id")
+        print(session_id)
+        if session_id:
             try:
-                payment = Payment.objects.get(pk=client_reference_id)
-                payment.status = "paid"
+                payment = Payment.objects.get(session_id=session_id)
+                payment.status = PaymentStatus.PAID
                 payment.save()
             except Payment.DoesNotExist:
-                pass
+                print("Payment does not exist")
+        else:
+            print("Session id does not exist")
 
     return HttpResponse(status=200)
