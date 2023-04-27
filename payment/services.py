@@ -27,11 +27,15 @@ def calculate_borrowing_days(borrowing):
 
 def create_borrowing_stripe_session(borrowing):
     request = HttpRequest()
-    success_url = request.build_absolute_uri(reverse("payment:order_success"))
-    cancel_url = request.build_absolute_uri(reverse("payment:order_cancel"))
+    success_url = request.build_absolute_uri(
+        reverse("payment:order_success")
+    ) + "?session_id={CHECKOUT_SESSION_ID}"
+    cancel_url = request.build_absolute_uri(
+        reverse("payment:order_cancel")
+    )
     checkout_session = stripe.checkout.Session.create(
 
-        success_url=success_url + "?session_id={CHECKOUT_SESSION_ID}",
+        success_url=success_url,
         cancel_url=cancel_url,
         payment_method_types=["card"],
         mode="subscription",
