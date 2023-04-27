@@ -4,6 +4,9 @@ from rest_framework.exceptions import ValidationError
 from borrowings.models import Borrowing
 from books.serializers import BookDetailSerializer
 
+from payment import serializers as payment_serializers
+from payment.models import Payment
+
 
 class BorrowingSerializer(serializers.ModelSerializer):
     class Meta:
@@ -26,6 +29,7 @@ class BorrowingSerializer(serializers.ModelSerializer):
         )
 
 class BorrowingListSerializer(BorrowingSerializer):
+
     class Meta:
         model = Borrowing
         fields = (
@@ -33,8 +37,18 @@ class BorrowingListSerializer(BorrowingSerializer):
             "expected_return_date",
             "actual_return_date",
             "book",
-            "user"
+            "user",
         )
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        payment_serializer = payment_serializers.PaymentDetailSerializer(
+            Payment.objects.filter(borrowing_id=instance.id),
+            many=True,
+            read_only=True
+        )
+        data["payments"] = payment_serializer.data
+        return data
 
 
 class BorrowingDetailSerializer(serializers.ModelSerializer):
@@ -69,7 +83,6 @@ class BorrowingCreateSerializer(BorrowingSerializer):
         borrowing = Borrowing.objects.create(**validated_data)
         book.inventory -= 1
         book.save()
-
         return borrowing
 
 

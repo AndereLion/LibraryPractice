@@ -1,26 +1,20 @@
 from django.db import models
-from django.urls import reverse
-from enum import Enum
+from rest_framework.reverse import reverse
 
 
-class PaymentStatus(Enum):
+class PaymentStatus(models.TextChoices):
     PENDING = "Pending"
     PAID = "Paid"
 
 
-class PaymentType(Enum):
+class PaymentType(models.TextChoices):
     PAYMENT = "Payment"
     FINE = "Fine"
 
 
 class Payment(models.Model):
-    status = models.CharField(
-        max_length=50,
-        choices=[(tag, tag.value) for tag in PaymentStatus]
-    )
-    type = models.CharField(
-        max_length=50, choices=[(tag, tag.value) for tag in PaymentType]
-    )
+    status = models.CharField(max_length=50, choices=PaymentStatus.choices)
+    type = models.CharField(max_length=50, choices=PaymentType.choices)
     borrowing_id = models.PositiveIntegerField()
     session_url = models.URLField()
     session_id = models.CharField(max_length=100)

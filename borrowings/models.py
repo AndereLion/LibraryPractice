@@ -13,7 +13,7 @@ class Borrowing(models.Model):
     actual_return_date = models.DateField(
         validators=[MinValueValidator(timezone.now().date())],
         null=True,
-        blank=True
+        blank=True,
     )
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
@@ -24,6 +24,13 @@ class Borrowing(models.Model):
         if self.expected_return_date < self.borrow_date:
             raise ValidationError("Expected return date cannot be earlier than borrow date.")
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs) -> None:
         self.full_clean()
         super().save(*args, **kwargs)
+
+    def __str__(self) -> str:
+        if self.actual_return_date:
+            return f"Book {self.book} returned at {self.actual_return_date}"
+        if self.expected_return_date <= timezone.now().date():
+            return f"{self.book} should be returned at {self.expected_return_date}"
+        return f"{self.book} overdue for {self.expected_return_date - timezone.now().date()}"

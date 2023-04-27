@@ -175,8 +175,22 @@ CELERY_TASK_TIME_LIMIT = 30 * 60
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
+SERVER_NAME = "localhost"
+BASE_URL = "localhost"
+
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / "static"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+if DEBUG:
+    DOMAIN_SCHEMA = "http"
+    DOMAIN_HOST = "localhost"
+    DOMAIN_PORT = "8000"
+    DOMAIN_URL = f"{DOMAIN_SCHEMA}://{DOMAIN_HOST}:{DOMAIN_PORT}"
+else:
+    DOMAIN_SCHEMA = "https"
+    DOMAIN_HOST = ""
+    DOMAIN_PORT = ""
+    DOMAIN_URL = f"{DOMAIN_SCHEMA}://{DOMAIN_HOST}"
