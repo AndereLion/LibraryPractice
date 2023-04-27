@@ -52,4 +52,3 @@ def create_borrowing_stripe_session(borrowing):
         money_to_pay=calculate_borrowing_total_price(borrowing),
     )
     return checkout_session, payment_obj
-# hi
