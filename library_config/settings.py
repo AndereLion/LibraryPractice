@@ -175,9 +175,12 @@ CELERY_TASK_TIME_LIMIT = 30 * 60
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
+<<<<<<< HEAD
+=======
 SERVER_NAME = "localhost"
 BASE_URL = "localhost"
 
+>>>>>>> e92a2b27652a4abdf7a1a7b001f93e3125b20945
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / "static"
 
